@@ -1,0 +1,69 @@
+def text_to_numbers(text):
+    text = text.replace(" ", "").replace("'", "").replace(".", "").upper()
+    return [ord(char) - ord('A') for char in text]
+
+def numbers_to_text(numbers):
+    return ''.join([chr(num + ord('A')) for num in numbers])
+
+def matrix_multiply(matrix, vector):
+    result = [0, 0]
+    result[0] = (matrix[0][0] * vector[0] + matrix[0][1] * vector[1]) % 26
+    result[1] = (matrix[1][0] * vector[0] + matrix[1][1] * vector[1]) % 26
+    return result
+
+def mod_inverse(a, m):
+    for x in range(1, m):
+        if (a * x) % m == 1:
+            return x
+    return None
+
+def encrypt(message, key_matrix):
+    message = text_to_numbers(message)
+    if len(message) % 2 != 0:
+        message.append(24)
+    
+    encrypted_message = []
+    for i in range(0, len(message), 2):
+        pair = [message[i], message[i+1]]
+        result = matrix_multiply(key_matrix, pair)
+        encrypted_message.extend(result)
+    
+    return numbers_to_text(encrypted_message)
+def decrypt(encrypted_message, key_matrix):
+    det = (key_matrix[0][0] * key_matrix[1][1] - key_matrix[0][1] * key_matrix[1][0]) % 26
+    
+    if det == 0:
+        raise ValueError("The determinant of the key matrix is zero. It must be non-zero for decryption.")
+    
+    det_inverse = mod_inverse(det, 26)
+    
+    if det_inverse is None:
+        raise ValueError("The modular multiplicative inverse of the determinant doesn't exist (mod 26).")
+    
+    key_matrix_inverse = [[0, 0], [0, 0]]
+    key_matrix_inverse[0][0] = (det_inverse * key_matrix[1][1]) % 26
+    key_matrix_inverse[0][1] = (-det_inverse * key_matrix[0][1]) % 26
+    key_matrix_inverse[1][0] = (-det_inverse * key_matrix[1][0]) % 26
+    key_matrix_inverse[1][1] = (det_inverse * key_matrix[0][0]) % 26
+    
+    encrypted_message = text_to_numbers(encrypted_message)
+    decrypted_message = []
+    
+    for i in range(0, len(encrypted_message), 2):
+        pair = [encrypted_message[i], encrypted_message[i+1]]
+        result = matrix_multiply(key_matrix_inverse, pair)
+        decrypted_message.extend(result)
+    
+    return numbers_to_text(decrypted_message)
+
+# Your message and key
+message = "meet me at the usual place at ten rather than eight o'clock"
+key_matrix = [[9, 4], [5, 7]]
+
+# Encryption
+encrypted_message = encrypt(message, key_matrix)
+print("Encrypted Message:", encrypted_message)
+
+# Decryption
+decrypted_message = decrypt(encrypted_message, key_matrix)
+print("Decrypted Message:", decrypted_message)
